@@ -1,41 +1,66 @@
-package main
+package main 
 
-import (
-	"context"
-	"flag"
-	"log"
-	"time"
+import {
 
-	pb "github.com/ViktorEmil2000/DSystems-Group-CatanEnjoyers/api/proto"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-)
+}
 
-const (
-	defaultName = "world"
-)
+func main(){
 
-var (
-	addr = flag.String("addr", "localhost:50051", "the address to connect to")
-	name = flag.String("name", defaultName, "Name to greet")
-)
+	fmt.Println("Enter your name")
+	reader :=bufio.NewReader(os.Stdin)
+	username,err := reader.ReadString('\n')
 
-func main() {
-	flag.Parse()
-	// Set up a connection to the server.
-	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+	if err!= nil{
+		log.Println("Failed to read username")
 	}
-	defer conn.Close()
-	c := pb.NewGreeterClient(conn)
-
-	// Contact the server and print out its response.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	r, err := c.SayHello(ctx, &pb.HelloRequest{Name: *name})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+	
+	conn,err := grpc.Dial("50051",grpc.WithInsecure())
+	client := ChitChatServer.NewServicesClient(conn)	
+	
+	stream, err := client.ChatService(context.Background())
+	if err != nil{
+		log.Fatalf("Failed to call ChatService :: %v", err)
 	}
-	log.Printf("Greeting: %s", r.GetMessage())
+
+	bl := make(chan bool)
+	<-bl
+}
+
+type clienthandle struct{
+	stream ChitChatServer.Services_ChatServiceServer
+	username string
+}
+func (ch *clienthandle) clientConfig(string username){
+	ch.username = username
+}
+
+func (ch *clienthandle) sendMessage(){
+	for{
+		reader :=bufio.NewReader(os.stdin)
+
+		clientMessage, err := reader.ReadString('\n')
+		if err != nil {
+			log.Fatalf("Failed to read from console :: %v",err)
+		}
+		clientMessage = String.Trim(clientMessage, "\r\n")
+
+		clientMessageBox := &ChitChatServer.FromClient{
+			name: ch.ClientName,
+			body: clientMessage,
+		}
+
+
+		err = ch.stream.Send(clientMessageBox)
+		if err != nil{
+			log.Printf("Error while sending message to server :: %v", err)
+		}
+	}
+}
+func (ch *clienthandle) receiveMessage() {
+	for {
+		msg := ch.stream.Recv()
+		
+	}
+
+	fmt.Printf("%s :%s \n", msg.names,msg.body)
 }
