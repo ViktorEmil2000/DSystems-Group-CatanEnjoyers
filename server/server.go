@@ -21,6 +21,5 @@ func main() {
 	grpcserver := grpc.NewServer()
 
 	grpcserver.Serve(listen)
-	log.Println("Server Running")
 
 }
