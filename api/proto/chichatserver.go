@@ -47,6 +47,7 @@ func receiveFromStream(csi Services_ChatServiceServer, ID_ int, errch chan error
 		mssg, err := csi.Recv()
 		if err != nil {
 			log.Printf("Error in receiving message from client :: %v", err)
+
 		} else {
 
 			messageHandleObject.mu.Lock()

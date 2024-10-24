@@ -1,66 +1,76 @@
-package main 
+package main
 
-import {
+import (
+	"bufio"
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"strings"
 
-}
+	"github.com/ViktorEmil2000/DSystems-Group-CatanEnjoyers/api/proto"
+	"google.golang.org/grpc"
+)
 
-func main(){
+func main() {
 
-	fmt.Println("Enter your name")
-	reader :=bufio.NewReader(os.Stdin)
-	username,err := reader.ReadString('\n')
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Printf("Your name :")
+	name, _ := reader.ReadString('\n')
+	username := strings.Trim(name, "\r\n")
 
-	if err!= nil{
-		log.Println("Failed to read username")
-	}
-	
-	conn,err := grpc.Dial("50051",grpc.WithInsecure())
-	client := ChitChatServer.NewServicesClient(conn)	
-	
+	conn, _ := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	defer conn.Close()
+
+	client := proto.NewServicesClient(conn)
+
 	stream, err := client.ChatService(context.Background())
-	if err != nil{
+	if err != nil {
 		log.Fatalf("Failed to call ChatService :: %v", err)
 	}
+	ch := clienthandle{
+		stream:   stream,
+		username: username,
+	}
+
+	go sendMessage(ch)
+	go receiveMessage(ch)
 
 	bl := make(chan bool)
 	<-bl
 }
 
-type clienthandle struct{
-	stream ChitChatServer.Services_ChatServiceServer
+type clienthandle struct {
+	stream   proto.Services_ChatServiceClient
 	username string
 }
-func (ch *clienthandle) clientConfig(string username){
-	ch.username = username
-}
 
-func (ch *clienthandle) sendMessage(){
-	for{
-		reader :=bufio.NewReader(os.stdin)
+func sendMessage(ch clienthandle) {
+	for {
+		reader := bufio.NewReader(os.Stdin)
 
 		clientMessage, err := reader.ReadString('\n')
 		if err != nil {
-			log.Fatalf("Failed to read from console :: %v",err)
+			log.Fatalf("Failed to read from console :: %v", err)
 		}
-		clientMessage = String.Trim(clientMessage, "\r\n")
+		clientMessage = strings.Trim(clientMessage, "\r\n")
 
-		clientMessageBox := &ChitChatServer.FromClient{
-			name: ch.ClientName,
-			body: clientMessage,
+		clientMessageBox := &proto.FromClient{
+			Name: ch.username,
+			Body: clientMessage,
 		}
-
 
 		err = ch.stream.Send(clientMessageBox)
-		if err != nil{
+		if err != nil {
 			log.Printf("Error while sending message to server :: %v", err)
 		}
 	}
 }
-func (ch *clienthandle) receiveMessage() {
+func receiveMessage(ch clienthandle) {
 	for {
-		msg := ch.stream.Recv()
-		
+		msg, _ := ch.stream.Recv()
+
+		fmt.Printf("%s :%s \n", msg.Name, msg.Body)
 	}
 
-	fmt.Printf("%s :%s \n", msg.names,msg.body)
 }
