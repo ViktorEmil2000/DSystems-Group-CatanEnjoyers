@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package chitchat;
+
+option go_package = "github.com/ViktorEmil2000/DSystems-Group-CatanEnjoyers/api/proto";
+
+message FromClient{
+
+    string name = 1;
+    string body = 2;
+}
+
+message FromServer{
+    
+    string name = 1;
+    string body = 2;
+}
+
+service Services{
+
+    rpc ChatServic(stream FromClient) returns (stream FromServer){};
+}
