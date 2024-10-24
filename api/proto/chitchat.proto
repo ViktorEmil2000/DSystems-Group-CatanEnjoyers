@@ -1,22 +1,24 @@
 syntax = "proto3";
 
-package helloworld;
+package chitchat;
 
 // Specify the Go package where the generated code will reside.
 option go_package = "github.com/ViktorEmil2000/DSystems-Group-CatanEnjoyers/api/proto";
 
 // The greeting service definition.
-service Greeter {
+service Services {
   // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc ChatService (stream FromClient) returns (stream FromServer) {}
 }
 
 // The request message containing the user's name.
-message HelloRequest {
+message FromClient {
   string name = 1;
+  string body = 2;
 }
 
 // The response message containing the greetings.
-message HelloReply {
-  string message = 1;
+message FromServer {
+  string name = 1;
+  string body = 2;
 }
