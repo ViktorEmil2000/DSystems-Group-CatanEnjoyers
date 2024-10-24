@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/ViktorEmil2000/DSystems-Group-CatanEnjoyers/api/proto"
 	"google.golang.org/grpc"
 )
 
@@ -19,6 +20,9 @@ func main() {
 	log.Println("Listening @ : " + Port)
 
 	grpcserver := grpc.NewServer()
+
+	cs := proto.ChitChatServer{}
+	proto.RegisterServicesServer(grpcserver, &cs)
 
 	grpcserver.Serve(listen)
 

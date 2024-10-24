@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package chitchat;
+package proto;
 
 // Specify the Go package where the generated code will reside.
 option go_package = "github.com/ViktorEmil2000/DSystems-Group-CatanEnjoyers/api/proto";
