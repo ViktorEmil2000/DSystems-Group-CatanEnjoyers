@@ -42,20 +42,32 @@ func (ccs *ChitChatServer) ChatService(csi Services_ChatServiceServer) error {
 
 // Recieves messages from stream
 func receiveFromStream(csi Services_ChatServiceServer, ID_ int, errch chan error) {
-
-	for {
-		mssg, err := csi.Recv()
+	kill := true
+	name := "User"
+	for kill == true {
+		msg, err := csi.Recv()
 		if err != nil {
-			log.Printf("Error in receiving message from client :: %v", err)
-
-		} else {
-
 			messageHandleObject.mu.Lock()
 
 			messageHandleObject.MQue = append(messageHandleObject.MQue, messageStruc{
 				ID:       ID_,
-				Username: mssg.Name,
-				Message:  mssg.Body,
+				Username: name,
+				Message:  "Disconnected",
+			})
+
+			messageHandleObject.mu.Unlock()
+			log.Printf("%v", messageHandleObject.MQue[len(messageHandleObject.MQue)-1])
+			kill = false
+		} else {
+			if name == "User" {
+				name = msg.Name
+			}
+			messageHandleObject.mu.Lock()
+
+			messageHandleObject.MQue = append(messageHandleObject.MQue, messageStruc{
+				ID:       ID_,
+				Username: msg.Name,
+				Message:  msg.Body,
 			})
 
 			messageHandleObject.mu.Unlock()

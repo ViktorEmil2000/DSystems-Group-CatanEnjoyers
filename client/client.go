@@ -36,6 +36,12 @@ func main() {
 	go sendMessage(ch)
 	go receiveMessage(ch)
 
+	initialMessage := &proto.FromClient{
+		Name: ch.username,
+		Body: "Connected!",
+	}
+	ch.stream.Send(initialMessage)
+
 	bl := make(chan bool)
 	<-bl
 }
