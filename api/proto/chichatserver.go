@@ -121,7 +121,7 @@ func sendToStream() {
 			senderName4Client := messageHandleObject.MQue[0].Username
 			message4Client := messageHandleObject.MQue[0].Message
 			lamporttime4client := messageHandleObject.MQue[0].LamportTime
-			message4Client = message4Client + " @" + strconv.Itoa(lamporttime4client)
+			message4Client = " " +message4Client + " [@ Lamport time: " + strconv.Itoa(lamporttime4client) + "]"
 			messageHandleObject.mu.Unlock()
 
 			for _, element := range UList {

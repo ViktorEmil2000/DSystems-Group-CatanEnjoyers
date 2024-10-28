@@ -76,7 +76,7 @@ func receiveMessage(ch clienthandle) {
 	for {
 		msg, _ := ch.stream.Recv()
 
-		fmt.Printf("%s :%s \n", msg.Name, msg.Body)
+		fmt.Printf("%s: %s  \n", msg.Name, msg.Body)
 	}
 
 }
