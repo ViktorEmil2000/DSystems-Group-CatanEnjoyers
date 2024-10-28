@@ -21,6 +21,15 @@ type messageHandle struct {
 
 var messageHandleObject = messageHandle{}
 
+type ConnectedUser struct {
+	ID  int
+	csi Services_ChatServiceServer
+}
+
+var UList = []ConnectedUser{}
+
+var sendToStreamCheck = 0
+
 type ChitChatServer struct {
 }
 
@@ -34,9 +43,17 @@ func (ccs *ChitChatServer) ChatService(csi Services_ChatServiceServer) error {
 
 	ID_ := rand.Intn(1e6)
 
-	go receiveFromStream(csi, ID_, errch)
+	UList = append(UList, ConnectedUser{
+		ID:  ID_,
+		csi: csi,
+	})
 
-	go sendToStream(csi, ID_, errch)
+	go receiveFromStream(csi, ID_, errch)
+	if sendToStreamCheck == 0 {
+		go sendToStream()
+		sendToStreamCheck = 1
+	}
+
 	return <-errch
 }
 
@@ -54,8 +71,14 @@ func receiveFromStream(csi Services_ChatServiceServer, ID_ int, errch chan error
 				Username: name,
 				Message:  "Disconnected",
 			})
-
 			messageHandleObject.mu.Unlock()
+			for i, element := range UList {
+				if element.ID == ID_ {
+					UList = append(UList[:i], UList[i+1:]...)
+				}
+
+			}
+
 			log.Printf("%v", messageHandleObject.MQue[len(messageHandleObject.MQue)-1])
 			kill = false
 		} else {
@@ -77,7 +100,7 @@ func receiveFromStream(csi Services_ChatServiceServer, ID_ int, errch chan error
 	}
 }
 
-func sendToStream(csi Services_ChatServiceServer, ID_ int, errch chan error) {
+func sendToStream() {
 	for {
 
 		for {
@@ -95,23 +118,24 @@ func sendToStream(csi Services_ChatServiceServer, ID_ int, errch chan error) {
 
 			messageHandleObject.mu.Unlock()
 
-			if ID != ID_ {
-				err := csi.Send(&FromServer{Name: senderName4Client, Body: message4Client})
-
-				if err != nil {
-					errch <- err
+			for _, element := range UList {
+				if element.ID != ID {
+					err := element.csi.Send(&FromServer{Name: senderName4Client, Body: message4Client})
+					if err != nil {
+						log.Printf("couldn't send to user of: %d ", element.ID)
+					}
 				}
-
-				messageHandleObject.mu.Lock()
-
-				if len(messageHandleObject.MQue) > 1 {
-					messageHandleObject.MQue = messageHandleObject.MQue[1:]
-				} else {
-					messageHandleObject.MQue = []messageStruc{}
-				}
-
-				messageHandleObject.mu.Unlock()
 			}
+
+			messageHandleObject.mu.Lock()
+
+			if len(messageHandleObject.MQue) > 1 {
+				messageHandleObject.MQue = messageHandleObject.MQue[1:]
+			} else {
+				messageHandleObject.MQue = []messageStruc{}
+			}
+
+			messageHandleObject.mu.Unlock()
 
 		}
 		time.Sleep(100 * time.Millisecond)
