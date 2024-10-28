@@ -2,6 +2,7 @@ package proto
 
 import (
 	"log"
+	"strconv"
 	"sync"
 	"time"
 
@@ -9,9 +10,10 @@ import (
 )
 
 type messageStruc struct {
-	ID       int
-	Username string
-	Message  string
+	ID          int
+	Username    string
+	Message     string
+	LamportTime int
 }
 
 type messageHandle struct {
@@ -29,6 +31,7 @@ type ConnectedUser struct {
 var UList = []ConnectedUser{}
 
 var sendToStreamCheck = 0
+var lamporttime = 0
 
 type ChitChatServer struct {
 }
@@ -65,11 +68,12 @@ func receiveFromStream(csi Services_ChatServiceServer, ID_ int, errch chan error
 		msg, err := csi.Recv()
 		if err != nil {
 			messageHandleObject.mu.Lock()
-
+			lamporttime = lamporttime + 1
 			messageHandleObject.MQue = append(messageHandleObject.MQue, messageStruc{
-				ID:       ID_,
-				Username: name,
-				Message:  "Disconnected",
+				ID:          ID_,
+				Username:    name,
+				Message:     "Disconnected",
+				LamportTime: lamporttime,
 			})
 			messageHandleObject.mu.Unlock()
 			for i, element := range UList {
@@ -86,11 +90,12 @@ func receiveFromStream(csi Services_ChatServiceServer, ID_ int, errch chan error
 				name = msg.Name
 			}
 			messageHandleObject.mu.Lock()
-
+			lamporttime = lamporttime + 1
 			messageHandleObject.MQue = append(messageHandleObject.MQue, messageStruc{
-				ID:       ID_,
-				Username: msg.Name,
-				Message:  msg.Body,
+				ID:          ID_,
+				Username:    msg.Name,
+				Message:     msg.Body,
+				LamportTime: lamporttime,
 			})
 
 			messageHandleObject.mu.Unlock()
@@ -115,7 +120,8 @@ func sendToStream() {
 			ID := messageHandleObject.MQue[0].ID
 			senderName4Client := messageHandleObject.MQue[0].Username
 			message4Client := messageHandleObject.MQue[0].Message
-
+			lamporttime4client := messageHandleObject.MQue[0].LamportTime
+			message4Client = message4Client + " @" + strconv.Itoa(lamporttime4client)
 			messageHandleObject.mu.Unlock()
 
 			for _, element := range UList {
